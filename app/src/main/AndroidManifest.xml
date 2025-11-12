@@ -1,8 +1,15 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+<?xml version="1.0" encoding="utf-8"?>
+<manifest
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     package="com.chidu.usagelogger">
 
-    <uses-permission android:name="android.permission.PACKAGE_USAGE_STATS"
+    <!-- Usage access (user must enable in Settings) -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
         tools:ignore="ProtectedPermissions" />
+
+    <!-- Optional: for future foreground work; not strictly needed now -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
 
     <application
@@ -16,24 +23,25 @@
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.intent.action.MAIN"/>
-                <category android:name="android.intent.category.LAUNCHER"/>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
 
+        <!-- Notification capture (user must enable Notification Access) -->
         <service
             android:name=".notifications.NotifListener"
-            android:label="Usage Logger Notification Access"
             android:permission="android.permission.BIND_NOTIFICATION_LISTENER_SERVICE"
             android:exported="true">
             <intent-filter>
-                <action android:name="android.service.notification.NotificationListenerService"/>
+                <action android:name="android.service.notification.NotificationListenerService" />
             </intent-filter>
             <meta-data
                 android:name="android.service.notification.default_filter_types"
-                android:resource="@xml/notification_listener_config"/>
+                android:resource="@xml/notification_listener_config" />
         </service>
 
+        <!-- Screen events receiver (we register it at runtime) -->
         <receiver
             android:name=".system.ScreenEventReceiver"
             android:enabled="true"
