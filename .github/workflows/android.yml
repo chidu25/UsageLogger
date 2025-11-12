@@ -1,4 +1,4 @@
-name: Build Android APK (UsageLogger subfolder)
+name: Build Android APK (root)
 
 on:
   workflow_dispatch:
@@ -12,33 +12,36 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Show repo tree (debug)
+        run: ls -la && echo "-----" && ls -la app && echo "-----" && ls -la app/src/main || true
+
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
           distribution: 'temurin'
           java-version: '17'
 
-      # Generate Gradle wrapper inside UsageLogger folder
-      - name: Install Gradle and create wrapper
+      # Create a Gradle wrapper if it's missing
+      - name: Install Gradle & create wrapper (if needed)
         run: |
-          cd UsageLogger
-          curl -s "https://get.sdkman.io" | bash
-          source "$HOME/.sdkman/bin/sdkman-init.sh"
-          sdk install gradle 8.7
-          gradle wrapper --gradle-version 8.7
-          chmod +x ./gradlew
+          if [ ! -f gradlew ]; then
+            curl -s "https://get.sdkman.io" | bash
+            source "$HOME/.sdkman/bin/sdkman-init.sh"
+            sdk install gradle 8.7
+            gradle wrapper --gradle-version 8.7
+          fi
 
-      # Accept Android SDK licenses
+      - name: Make gradlew executable
+        run: chmod +x ./gradlew
+
       - name: Accept Android SDK licenses
         run: yes | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
 
       - name: Build Debug APK
-        run: |
-          cd UsageLogger
-          ./gradlew assembleDebug --stacktrace
+        run: ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: app-debug-apk
-          path: UsageLogger/app/build/outputs/apk/debug/app-debug.apk
+          path: app/build/outputs/apk/debug/app-debug.apk
