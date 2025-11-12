@@ -1,4 +1,4 @@
-name: Build Android APK (root)
+name: Build Android APK (root, robust)
 
 on:
   workflow_dispatch:
@@ -13,15 +13,25 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Show repo tree (debug)
-        run: ls -la && echo "-----" && ls -la app && echo "-----" && ls -la app/src/main || true
+        run: |
+          echo "== ROOT =="
+          ls -la
+          echo "== APP =="
+          ls -la app || true
+          echo "== APP/src/main =="
+          ls -la app/src/main || true
+          echo "== JAVA PKG =="
+          ls -la app/src/main/java/com/chidu/usagelogger || true
+          echo "== RES =="
+          ls -la app/src/main/res || true
 
       - name: Set up JDK 17
         uses: actions/setup-java@v4
         with:
-          distribution: 'temurin'
+          distribution: temurin
           java-version: '17'
 
-      # Create a Gradle wrapper if it's missing
+      # Create Gradle wrapper if your repo doesn't have gradlew
       - name: Install Gradle & create wrapper (if needed)
         run: |
           if [ ! -f gradlew ]; then
@@ -30,12 +40,18 @@ jobs:
             sdk install gradle 8.7
             gradle wrapper --gradle-version 8.7
           fi
+          chmod +x ./gradlew
 
-      - name: Make gradlew executable
-        run: chmod +x ./gradlew
-
-      - name: Accept Android SDK licenses
-        run: yes | sudo /usr/local/lib/android/sdk/cmdline-tools/latest/bin/sdkmanager --licenses
+      # Install required Android SDK packages explicitly
+      - name: Install Android SDK packages
+        env:
+          ANDROID_SDK_ROOT: /usr/local/lib/android/sdk
+        run: |
+          yes | "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" --licenses
+          "${ANDROID_SDK_ROOT}/cmdline-tools/latest/bin/sdkmanager" \
+            "platform-tools" \
+            "platforms;android-35" \
+            "build-tools;35.0.0"
 
       - name: Build Debug APK
         run: ./gradlew assembleDebug --stacktrace
